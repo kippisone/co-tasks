@@ -36,7 +36,7 @@ describe('co-tasks', function() {
         it('Should pre define task names, including pre tasks', function() {
             taskRunner.defineTasks(['foo', 'bar'], true);
 
-            expect(taskRunner.allowedTasks).to.eql(['pre-foo', 'foo', 'pre-bar', 'bar']);
+            expect(taskRunner.allowedTasks).to.eql(['foo', 'bar']);
             expect(taskRunner.tasks).to.eql({
                 'pre-foo': [],
                 'foo': [],
@@ -48,7 +48,7 @@ describe('co-tasks', function() {
         it('Should pre define task names, including post tasks', function() {
             taskRunner.defineTasks(['foo', 'bar'], false, true);
 
-            expect(taskRunner.allowedTasks).to.eql(['foo', 'post-foo', 'bar', 'post-bar']);
+            expect(taskRunner.allowedTasks).to.eql(['foo', 'bar']);
             expect(taskRunner.tasks).to.eql({
                 'foo': [],
                 'post-foo': [],
@@ -60,7 +60,7 @@ describe('co-tasks', function() {
         it('Should pre define task names, including pre and post tasks', function() {
             taskRunner.defineTasks(['foo', 'bar'], true, true);
 
-            expect(taskRunner.allowedTasks).to.eql(['pre-foo', 'foo', 'post-foo', 'pre-bar', 'bar', 'post-bar']);
+            expect(taskRunner.allowedTasks).to.eql(['foo', 'bar']);
             expect(taskRunner.tasks).to.eql({
                 'pre-foo': [],
                 'foo': [],
@@ -159,6 +159,47 @@ describe('co-tasks', function() {
             taskRunner.registerTask('post-foo', fn4);
 
             var promise = taskRunner.run('foo');
+            expect(promise).to.be.an(Promise);
+            expect(promise.then).to.be.an('function');
+            expect(promise.catch).to.be.an('function');
+
+            promise.then(function() {
+                expect(fn1.calledOnce).to.be.ok();
+                expect(fn2.calledOnce).to.be.ok();
+                expect(fn3.calledOnce).to.be.ok();
+                expect(fn4.calledOnce).to.be.ok();
+
+
+                expect(fn2.calledAfter(fn1)).to.be.ok();
+                expect(fn3.calledAfter(fn2)).to.be.ok();
+                expect(fn4.calledAfter(fn3)).to.be.ok();
+                done();
+            }).catch(function(err) {
+                done(err);
+            });
+        });
+
+        it('Should run predefined tasks', function(done) {
+            var fn1 = sinon.stub();
+            var fn2 = sinon.stub();
+            var fn3 = sinon.stub();
+            var fn4 = sinon.stub();
+
+            fn1.yields(null);
+            fn2.yields(null);
+            fn3.yields(null);
+            fn4.yields(null);
+
+            taskRunner.defineTasks(['foo'], true, true);
+
+            taskRunner.registerTask('foo', fn2);    
+            taskRunner.registerTask('foo', fn3);    
+            taskRunner.registerTask('pre-foo', fn1);    
+            taskRunner.registerTask('post-foo', fn4);
+
+
+            var promise = taskRunner.run();
+            
             expect(promise).to.be.an(Promise);
             expect(promise.then).to.be.an('function');
             expect(promise.catch).to.be.an('function');

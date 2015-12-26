@@ -89,7 +89,6 @@ class CoTasks {
         for (let task of tasks) {
             if (regPreTasks) {
                 this.tasks['pre-' + task] = [];
-                this.allowedTasks.push('pre-' + task);
             }
 
             this.tasks[task] = [];
@@ -97,7 +96,6 @@ class CoTasks {
 
             if (regPostTasks) {
                 this.tasks['post-' + task] = [];
-                this.allowedTasks.push('post-' + task);
             }
         }
     }
