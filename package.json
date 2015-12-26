@@ -1,0 +1,42 @@
+{
+  "name": "co-tasks",
+  "version": "0.1.0",
+  "description": "Task/Hook runner using co. Runs an array of tasks in series.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "npm test"
+  },
+  "keywords": [
+    "task",
+    "hook",
+    "tasks",
+    "hooks",
+    "taskrunner",
+    "hookrunner",
+    "co-task",
+    "co-hook",
+    "co",
+    "co-series",
+    "series",
+    "queue"
+  ],
+  "author": "Andi Heinkelein <andifeind@noname-media.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "mocha": "^2.3.4"
+  },
+  "dependencies": {
+    "co-series": "^2.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Andifeind/co-tasks.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Andifeind/co-tasks/issues"
+  },
+  "homepage": "https://github.com/Andifeind/co-tasks#readme"
+}
