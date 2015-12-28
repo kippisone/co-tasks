@@ -39,15 +39,15 @@ class CoTasks {
                     throw new Error('Task name ' + task + ' not defined!');
                 }
 
-                if (this.tasks['pre-' + task].length) {
+                if (this.tasks['pre-' + task] && this.tasks['pre-' + task].length) {
                     yield co.series(this.tasks['pre-' + task]);
                 }
 
-                if (this.tasks[task].length) {
+                if (this.tasks[task] && this.tasks[task].length) {
                     yield co.series(this.tasks[task]);
                 }
 
-                if (this.tasks['post-' + task].length) {
+                if (this.tasks['post-' + task] && this.tasks['post-' + task].length) {
                     yield co.series(this.tasks['post-' + task]);
                 }
             }
