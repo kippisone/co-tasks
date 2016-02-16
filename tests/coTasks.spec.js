@@ -1,5 +1,6 @@
 'use strict';
 
+var path = require('path');
 var CoTasks = require('../index.js');
 var expect = require('expect.js');
 var sinon = require('sinon');
@@ -218,6 +219,39 @@ describe('co-tasks', function() {
             }).catch(function(err) {
                 done(err);
             });
+        });
+    });
+
+    describe('registerTasksDir', function() {
+        var taskRunner;
+
+        beforeEach(function() {
+            taskRunner = new CoTasks();
+        });
+        
+        it('Should be a method', function() {
+            expect(taskRunner.registerTasksDir).to.be.a('function');
+        });
+            
+        it('Should regiter a task dir', function() {
+            taskRunner.registerTasksDir(path.join(__dirname, 'tasks/'));
+            expect(taskRunner.tasks).to.be.an('object');
+            expect(taskRunner.tasks.foo).to.be.an('array');
+            expect(taskRunner.tasks.foo).to.have.length(1);
+            expect(taskRunner.tasks.bar).to.be.an('array');
+            expect(taskRunner.tasks.bar).to.have.length(1);
+        });
+            
+        it('Should regiter a task dir', function() {
+            taskRunner = new CoTasks({
+                tasksDir: path.join(__dirname, 'tasks/')
+            });
+
+            expect(taskRunner.tasks).to.be.an('object');
+            expect(taskRunner.tasks.foo).to.be.an('array');
+            expect(taskRunner.tasks.foo).to.have.length(1);
+            expect(taskRunner.tasks.bar).to.be.an('array');
+            expect(taskRunner.tasks.bar).to.have.length(1);
         });
     });
 });

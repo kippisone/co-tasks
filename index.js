@@ -1,9 +1,29 @@
 'use strict';
 
+var path = require('path');
 var co = require('co-utils');
+var glob = require('glob');
+var log = require('logtopus');
 
 class CoTasks {
-    constructor() {
+    /**
+     * CoTasks constructor
+     *
+     * conf: {
+     *     tasksDir: {string} Path to tasks directory,
+     *     debug: {boolean} enables debug mode
+     * }
+     * 
+     * @method constructor
+     * @param  {object}    [conf] Conf object
+     */
+    constructor(conf) {
+        conf = conf || {};
+
+        if (conf.debug) {
+            log.setLevel('debug');            
+        }
+
         /**
          * Tasks storage
          * @type {Object}
@@ -16,6 +36,11 @@ class CoTasks {
          * @default null
          */
         this.allowedTasks = null;
+
+
+        if (conf && conf.tasksDir) {
+            this.registerTasksDir(conf.tasksDir);
+        }
     }
 
     /**
@@ -64,6 +89,7 @@ class CoTasks {
      * @return {Object} Returns this.
      */
     registerTask(name, fn) {
+        log.debug('Register new task', name);
         if (!this.tasks[name]) {
             if (this.allowedTasks) {
                 throw new Error('Task name ' + name + ' not defined!\nAllowed tasks are: ' + Object.keys(this.tasks).join(', '));
@@ -97,6 +123,23 @@ class CoTasks {
             if (regPostTasks) {
                 this.tasks['post-' + task] = [];
             }
+        }
+    }
+
+    /**
+     * Registers a tasks dir
+     * @method registerTasksDir
+     * @param {string} dir Dir name
+     * @returns {object} Returns a promise
+     */
+    registerTasksDir(dir) {
+        log.debug('Register tasks dir', dir);
+        var self = this;
+        var files = glob.sync(path.join(dir, '**/*.js'));
+        for (let file of files) {
+            log.debug('... load tasks file', file);
+            var mod = require(file);
+            mod(self);
         }
     }
 }
