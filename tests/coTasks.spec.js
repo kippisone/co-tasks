@@ -220,6 +220,58 @@ describe('co-tasks', function() {
                 done(err);
             });
         });
+
+        it('Should should run function tasks', function(done) {
+            var stub = sinon.stub();
+            taskRunner.defineTasks(['foo'], true, true);
+            taskRunner.registerTask('foo', function(next) {
+                stub();
+                next();
+            });
+
+            var promise = taskRunner.run();
+            promise.then(function() {
+                expect(stub.calledOnce).to.be.ok();
+                done();
+            }).catch(function(err) {
+                done(err);
+            });
+        });
+
+        it('Should should run promise tasks', function(done) {
+            var stub = sinon.stub();
+            taskRunner.defineTasks(['foo'], true, true);
+            taskRunner.registerTask('foo', function() {
+                stub();
+                return Promise.resolve();
+            });
+
+            var promise = taskRunner.run();
+            promise.then(function() {
+                expect(stub.calledOnce).to.be.ok();
+                done();
+            }).catch(function(err) {
+                done(err);
+            });
+        });
+
+        it('Should should run generator tasks', function(done) {
+            var stub = sinon.stub();
+            taskRunner.defineTasks(['foo'], true, true);
+            taskRunner.registerTask('foo', function *() {
+                yield Promise.resolve();
+                stub();
+                return;
+            });
+
+            var promise = taskRunner.run();
+            promise.then(function() {
+                expect(stub.calledOnce).to.be.ok();
+                done();
+            }).catch(function(err) {
+                done(err);
+            });
+        });
     });
 
     describe('registerTasksDir', function() {
@@ -233,7 +285,7 @@ describe('co-tasks', function() {
             expect(taskRunner.registerTasksDir).to.be.a('function');
         });
             
-        it('Should regiter a task dir', function() {
+        it('Should register a task dir', function() {
             taskRunner.registerTasksDir(path.join(__dirname, 'tasks/'));
             expect(taskRunner.tasks).to.be.an('object');
             expect(taskRunner.tasks.foo).to.be.an('array');
@@ -242,7 +294,7 @@ describe('co-tasks', function() {
             expect(taskRunner.tasks.bar).to.have.length(1);
         });
             
-        it('Should regiter a task dir', function() {
+        it('Should register a task dir', function() {
             taskRunner = new CoTasks({
                 tasksDir: path.join(__dirname, 'tasks/')
             });
