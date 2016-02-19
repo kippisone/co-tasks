@@ -50,7 +50,7 @@ class CoTasks {
      * @param {String|Array} [tasks] Task name to be run. If this is not set, all tasks will be run
      * @return {Object} Returns a promise
      */
-    run(tasks) {
+    run(tasks, ctx, args) {
         if (!tasks) {
             tasks = this.allowedTasks;
         }
@@ -65,15 +65,15 @@ class CoTasks {
                 }
 
                 if (this.tasks['pre-' + task] && this.tasks['pre-' + task].length) {
-                    yield co.series(this.tasks['pre-' + task]);
+                    yield co.series(this.tasks['pre-' + task].bind(ctx));
                 }
 
                 if (this.tasks[task] && this.tasks[task].length) {
-                    yield co.series(this.tasks[task]);
+                    yield co.series(this.tasks[task].bind(ctx));
                 }
 
                 if (this.tasks['post-' + task] && this.tasks['post-' + task].length) {
-                    yield co.series(this.tasks['post-' + task]);
+                    yield co.series(this.tasks['post-' + task].bind(ctx));
                 }
             }
         }.bind(this));
@@ -139,7 +139,7 @@ class CoTasks {
         for (let file of files) {
             log.debug('... load tasks file', file);
             var mod = require(file);
-            mod(self);
+            mod(self, log);
         }
     }
 }

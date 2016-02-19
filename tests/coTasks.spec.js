@@ -241,6 +241,23 @@ describe('co-tasks', function() {
         it('Should should run promise tasks', function(done) {
             var stub = sinon.stub();
             taskRunner.defineTasks(['foo'], true, true);
+            taskRunner.registerTask('foo', function(promise) {
+                stub();
+                promise.resolve();
+            });
+
+            var promise = taskRunner.run();
+            promise.then(function() {
+                expect(stub.calledOnce).to.be.ok();
+                done();
+            }).catch(function(err) {
+                done(err);
+            });
+        });
+
+        it('Should should run promise returning function tasks', function(done) {
+            var stub = sinon.stub();
+            taskRunner.defineTasks(['foo'], true, true);
             taskRunner.registerTask('foo', function() {
                 stub();
                 return Promise.resolve();
