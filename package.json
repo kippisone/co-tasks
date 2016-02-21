@@ -1,6 +1,6 @@
 {
   "name": "co-tasks",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Task/Hook runner using co. Runs an array of tasks in series.",
   "main": "index.js",
   "directories": {
