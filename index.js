@@ -21,6 +21,7 @@ class CoTasks {
         conf = conf || {};
 
         if (conf.debug) {
+            this.debug = true;
             log.setLevel('debug');            
         }
 
@@ -50,7 +51,7 @@ class CoTasks {
      * @param {String|Array} [tasks] Task name to be run. If this is not set, all tasks will be run
      * @return {Object} Returns a promise
      */
-    run(tasks, ctx, args) {
+    run(tasks, ctx, args, timeout) {
         if (!tasks) {
             tasks = this.allowedTasks;
         }
@@ -59,23 +60,53 @@ class CoTasks {
         }
 
         return co(function* () {
+            var res = [];
             for (let task of tasks) {
+                let result;
+
                 if (!this.tasks[task]) {
                     throw new Error('Task name ' + task + ' not defined!');
                 }
 
                 if (this.tasks['pre-' + task] && this.tasks['pre-' + task].length) {
-                    yield co.series(this.tasks['pre-' + task].bind(ctx));
+                    if (this.debug) {
+                        log.debug('Run pre-' + task + ' tasks. Num items', this.tasks['pre-' + task].length);
+                    }
+
+                    result = yield co.series(this.tasks['pre-' + task], ctx, args, timeout);
+                    res.push({
+                        task: 'pre-' + task,
+                        results: result
+                    });
                 }
 
                 if (this.tasks[task] && this.tasks[task].length) {
-                    yield co.series(this.tasks[task].bind(ctx));
+                    if (this.debug) {
+                        log.debug('Run ' + task + ' tasks. Num items', this.tasks[task].length);
+                    }
+                    
+                    result = yield co.series(this.tasks[task], ctx, args, timeout);
+                    res.push({
+                        task: task,
+                        results: result
+                    });
                 }
 
                 if (this.tasks['post-' + task] && this.tasks['post-' + task].length) {
-                    yield co.series(this.tasks['post-' + task].bind(ctx));
+                    if (this.debug) {
+                        log.debug('Run post-' + task + ' tasks. Num items', this.tasks['post-' + task].length);
+                    }
+                    
+                    result = yield co.series(this.tasks['post-' + task], ctx, args, timeout);
+                    res.push({
+                        task: 'post-' + task,
+                        results: result
+                    });
                 }
+
             }
+
+            return res;
         }.bind(this));
     }
 
@@ -117,7 +148,9 @@ class CoTasks {
                 this.tasks['pre-' + task] = [];
             }
 
-            this.tasks[task] = [];
+            if (!(task in this.tasks)) {
+                this.tasks[task] = [];
+            }
             this.allowedTasks.push(task);
 
             if (regPostTasks) {

@@ -27,11 +27,12 @@
   "license": "MIT",
   "devDependencies": {
     "expect.js": "^0.3.1",
-    "mocha": "^2.3.4",
-    "sinon": "^1.17.2"
+    "inspect.js": "0.0.6",
+    "mocha": "^2.4.5",
+    "sinon": "^1.17.3"
   },
   "dependencies": {
-    "co-utils": "^0.1.0",
+    "co-utils": "^0.2.0",
     "glob": "^7.0.0",
     "logtopus": "^0.1.1",
     "recursive-readdir": "^1.3.0"

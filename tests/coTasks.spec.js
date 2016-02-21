@@ -3,6 +3,7 @@
 var path = require('path');
 var CoTasks = require('../index.js');
 var expect = require('expect.js');
+var inspect = require('inspect.js');
 var sinon = require('sinon');
 
 describe('co-tasks', function() {
@@ -284,6 +285,103 @@ describe('co-tasks', function() {
             var promise = taskRunner.run();
             promise.then(function() {
                 expect(stub.calledOnce).to.be.ok();
+                done();
+            }).catch(function(err) {
+                done(err);
+            });
+        });
+
+        it('Should should run function tasks with args', function(done) {
+            var stub = sinon.stub();
+            taskRunner.defineTasks(['foo'], true, true);
+            taskRunner.registerTask('foo', function(arg1, next) {
+                stub();
+                next(null, arg1);
+            });
+
+            var promise = taskRunner.run(null, ['test']);
+            promise.then(function(result) {
+                inspect(stub.calledOnce).isTrue();
+                inspect(result)
+                    .isArray()
+                    .isEql([{
+                        task: 'foo',
+                        results: ['test']
+                    }]);
+
+                done();
+            }).catch(function(err) {
+                done(err);
+            });
+        });
+
+        it('Should should run promise tasks with args', function(done) {
+            var stub = sinon.stub();
+            taskRunner.defineTasks(['foo'], true, true);
+            taskRunner.registerTask('foo', function(arg1, promise) {
+                stub();
+                promise.resolve(arg1);
+            });
+
+            var promise = taskRunner.run(null, ['test']);
+            promise.then(function(result) {
+                inspect(stub.calledOnce).isTrue();
+                inspect(result)
+                    .isArray()
+                    .isEql([{
+                        task: 'foo',
+                        results: ['test']
+                    }]);
+
+                done();
+            }).catch(function(err) {
+                done(err);
+            });
+        });
+
+        it('Should should run promise returning function tasks with args', function(done) {
+            var stub = sinon.stub();
+            taskRunner.defineTasks(['foo'], true, true);
+            taskRunner.registerTask('foo', function(arg1) {
+                stub();
+                return Promise.resolve(arg1);
+            });
+
+            var promise = taskRunner.run(null, ['test']);
+            promise.then(function(result) {
+                inspect(stub.calledOnce).isTrue();
+                inspect(result)
+                    .isArray()
+                    .isEql([{
+                        task: 'foo',
+                        results: ['test']
+                    }]);
+
+                done();
+            }).catch(function(err) {
+                done(err);
+            });
+        });
+
+        it('Should should run generator tasks with args', function(done) {
+            var stub = sinon.stub();
+            taskRunner.defineTasks(['foo'], true, true);
+            taskRunner.registerTask('foo', function *(arg1) {
+                yield Promise.resolve();
+                stub();
+                return arg1;
+            });
+
+            var promise = taskRunner.run(null, ['test']);
+            promise.then(function(result) {
+                inspect(stub.calledOnce).isTrue();
+                inspect(result)
+                    .isArray()
+                    .isEql([{
+                        task: 'foo',
+                        results: ['test']
+                    }]);
+
                 done();
             }).catch(function(err) {
                 done(err);
