@@ -1,9 +1,30 @@
 'use strict';
 
+var path = require('path');
 var co = require('co-utils');
+var glob = require('glob');
+var log = require('logtopus');
 
 class CoTasks {
-    constructor() {
+    /**
+     * CoTasks constructor
+     *
+     * conf: {
+     *     tasksDir: {string} Path to tasks directory,
+     *     debug: {boolean} enables debug mode
+     * }
+     * 
+     * @method constructor
+     * @param  {object}    [conf] Conf object
+     */
+    constructor(conf) {
+        conf = conf || {};
+
+        if (conf.debug) {
+            this.debug = true;
+            log.setLevel('debug');            
+        }
+
         /**
          * Tasks storage
          * @type {Object}
@@ -16,6 +37,11 @@ class CoTasks {
          * @default null
          */
         this.allowedTasks = null;
+
+
+        if (conf && conf.tasksDir) {
+            this.registerTasksDir(conf.tasksDir);
+        }
     }
 
     /**
@@ -25,7 +51,7 @@ class CoTasks {
      * @param {String|Array} [tasks] Task name to be run. If this is not set, all tasks will be run
      * @return {Object} Returns a promise
      */
-    run(tasks) {
+    run(tasks, ctx, args, timeout) {
         if (!tasks) {
             tasks = this.allowedTasks;
         }
@@ -34,23 +60,53 @@ class CoTasks {
         }
 
         return co(function* () {
+            var res = [];
             for (let task of tasks) {
+                let result;
+
                 if (!this.tasks[task]) {
                     throw new Error('Task name ' + task + ' not defined!');
                 }
 
                 if (this.tasks['pre-' + task] && this.tasks['pre-' + task].length) {
-                    yield co.series(this.tasks['pre-' + task]);
+                    if (this.debug) {
+                        log.debug('Run pre-' + task + ' tasks. Num items', this.tasks['pre-' + task].length);
+                    }
+
+                    result = yield co.series(this.tasks['pre-' + task], ctx, args, timeout);
+                    res.push({
+                        task: 'pre-' + task,
+                        results: result
+                    });
                 }
 
                 if (this.tasks[task] && this.tasks[task].length) {
-                    yield co.series(this.tasks[task]);
+                    if (this.debug) {
+                        log.debug('Run ' + task + ' tasks. Num items', this.tasks[task].length);
+                    }
+                    
+                    result = yield co.series(this.tasks[task], ctx, args, timeout);
+                    res.push({
+                        task: task,
+                        results: result
+                    });
                 }
 
                 if (this.tasks['post-' + task] && this.tasks['post-' + task].length) {
-                    yield co.series(this.tasks['post-' + task]);
+                    if (this.debug) {
+                        log.debug('Run post-' + task + ' tasks. Num items', this.tasks['post-' + task].length);
+                    }
+                    
+                    result = yield co.series(this.tasks['post-' + task], ctx, args, timeout);
+                    res.push({
+                        task: 'post-' + task,
+                        results: result
+                    });
                 }
+
             }
+
+            return res;
         }.bind(this));
     }
 
@@ -64,6 +120,7 @@ class CoTasks {
      * @return {Object} Returns this.
      */
     registerTask(name, fn) {
+        log.debug('Register new task', name);
         if (!this.tasks[name]) {
             if (this.allowedTasks) {
                 throw new Error('Task name ' + name + ' not defined!\nAllowed tasks are: ' + Object.keys(this.tasks).join(', '));
@@ -91,12 +148,31 @@ class CoTasks {
                 this.tasks['pre-' + task] = [];
             }
 
-            this.tasks[task] = [];
+            if (!(task in this.tasks)) {
+                this.tasks[task] = [];
+            }
             this.allowedTasks.push(task);
 
             if (regPostTasks) {
                 this.tasks['post-' + task] = [];
             }
+        }
+    }
+
+    /**
+     * Registers a tasks dir
+     * @method registerTasksDir
+     * @param {string} dir Dir name
+     * @returns {object} Returns a promise
+     */
+    registerTasksDir(dir) {
+        log.debug('Register tasks dir', dir);
+        var self = this;
+        var files = glob.sync(path.join(dir, '**/*.js'));
+        for (let file of files) {
+            log.debug('... load tasks file', file);
+            var mod = require(file);
+            mod(self, log);
         }
     }
 }
