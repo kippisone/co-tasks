@@ -118,17 +118,29 @@ class CoTasks {
      * @return {Object} Returns a promise
      */
     pipe(tasks, ctx, pipeArg, timeout) {
+        if (typeof tasks === 'string') {
+            tasks = [tasks];
+        }
+
         if (!tasks || !Array.isArray(tasks)) {
+            timeout = pipeArg;
+            pipeArg = ctx;
+            ctx = tasks;
             tasks = this.allowedTasks;
         }
-        else if (typeof tasks === 'string') {
-            tasks = [tasks];
+
+        if (typeof pipeArg === 'number' || pipeArg === undefined) {
+          pipeArg = ctx;
+          ctx = null;
+        }
+
+
+        if (!tasks) {
+           throw new Error('Set allowedTasks option or use tasks argument!');
         }
 
         return co(function* () {
             for (let task of tasks) {
-                let result;
-
                 if (!this.tasks[task]) {
                     throw new Error('Task name ' + task + ' not defined!');
                 }
@@ -138,11 +150,10 @@ class CoTasks {
                         log.debug('Run pre-' + task + ' tasks. Num items', this.tasks['pre-' + task].length);
                     }
 
-                    result = yield co.pipe(this.tasks['pre-' + task], ctx, pipeArg, timeout);
-                    if (!result) {
+                    pipeArg = yield co.pipe(this.tasks['pre-' + task], ctx, pipeArg, timeout);
+                    if (!pipeArg) {
                       throw new Error('Pipe error. Returned data aren\'t a valid pipe data object');
                     }
-                    pipeArg = result;
                 }
 
                 if (this.tasks[task] && this.tasks[task].length) {
@@ -150,11 +161,10 @@ class CoTasks {
                         log.debug('Run ' + task + ' tasks. Num items', this.tasks[task].length);
                     }
 
-                    result = yield co.pipe(this.tasks[task], ctx, pipeArg, timeout);
-                    if (!result) {
+                    pipeArg = yield co.pipe(this.tasks[task], ctx, pipeArg, timeout);
+                    if (!pipeArg) {
                       throw new Error('Pipe error. Returned data aren\'t a valid pipe data object');
                     }
-                    pipeArg = result;
                 }
 
                 if (this.tasks['post-' + task] && this.tasks['post-' + task].length) {
@@ -162,11 +172,10 @@ class CoTasks {
                         log.debug('Run post-' + task + ' tasks. Num items', this.tasks['post-' + task].length);
                     }
 
-                    result = yield co.pipe(this.tasks['post-' + task], ctx, pipeArg, timeout);
-                    if (!result) {
+                    pipeArg = yield co.pipe(this.tasks['post-' + task], ctx, pipeArg, timeout);
+                    if (!pipeArg) {
                       throw new Error('Pipe error. Returned data aren\'t a valid pipe data object');
                     }
-                    pipeArg = result;
                 }
 
             }
@@ -233,10 +242,13 @@ class CoTasks {
     registerTasksDir(dir) {
         log.debug('Register tasks dir', dir);
         var self = this;
-        var files = glob.sync(path.join(dir, '**/*.js'));
+        var files = glob.sync('**/*.js', {
+          cwd: dir
+        });
+
         for (let file of files) {
             log.debug('... load tasks file', file);
-            var mod = require(file);
+            var mod = require(path.join(dir, file));
             mod(self, log);
         }
     }

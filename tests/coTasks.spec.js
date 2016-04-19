@@ -396,7 +396,7 @@ describe('co-tasks', function() {
             taskRunner = new CoTasks();
         });
 
-        it('Should pipe tasks', function(done) {
+        it('Should pipe tasks in series', function(done) {
             var fn1 = sinon.spy(function(obj, callback) {
               obj.fn1 = true;
               callback(null, obj);
@@ -422,7 +422,65 @@ describe('co-tasks', function() {
             taskRunner.registerTask('pre-foo', fn1);
             taskRunner.registerTask('post-foo', fn4);
 
+            var promise = taskRunner.pipe(['foo'], {});
+            expect(promise).to.be.an(Promise);
+            expect(promise.then).to.be.an('function');
+            expect(promise.catch).to.be.an('function');
+
+            promise.then(function(res) {
+                expect(fn1.calledOnce).to.be.ok();
+                expect(fn2.calledOnce).to.be.ok();
+                expect(fn3.calledOnce).to.be.ok();
+                expect(fn4.calledOnce).to.be.ok();
+
+                expect(fn2.calledAfter(fn1)).to.be.ok();
+                expect(fn3.calledAfter(fn2)).to.be.ok();
+                expect(fn4.calledAfter(fn3)).to.be.ok();
+
+                expect(res).to.eql({
+                  fn1: true,
+                  fn2: true,
+                  fn3: true,
+                  fn4: true
+                });
+
+                done();
+            }).catch(function(err) {
+                done(err);
+            });
+        });
+
+        it('Should pipe predefined tasks', function(done) {
+            var fn1 = sinon.spy(function(obj, callback) {
+              obj.fn1 = true;
+              callback(null, obj);
+            });
+
+            var fn2 = sinon.spy(function(obj, callback) {
+              obj.fn2 = true;
+              callback(null, obj);
+            });
+
+            var fn3 = sinon.spy(function(obj, callback) {
+              obj.fn3 = true;
+              callback(null, obj);
+            });
+
+            var fn4 = sinon.spy(function(obj, callback) {
+              obj.fn4 = true;
+              callback(null, obj);
+            });
+
+            taskRunner.defineTasks(['foo'], true, true);
+
+            taskRunner.registerTask('foo', fn2);
+            taskRunner.registerTask('foo', fn3);
+            taskRunner.registerTask('pre-foo', fn1);
+            taskRunner.registerTask('post-foo', fn4);
+
+
             var promise = taskRunner.pipe({});
+
             expect(promise).to.be.an(Promise);
             expect(promise.then).to.be.an('function');
             expect(promise.catch).to.be.an('function');
@@ -451,207 +509,111 @@ describe('co-tasks', function() {
             });
         });
 
-        it.skip('Should run predefined tasks', function(done) {
-            var fn1 = sinon.stub();
-            var fn2 = sinon.stub();
-            var fn3 = sinon.stub();
-            var fn4 = sinon.stub();
-
-            fn1.yields(null);
-            fn2.yields(null);
-            fn3.yields(null);
-            fn4.yields(null);
-
-            taskRunner.defineTasks(['foo'], true, true);
-
-            taskRunner.registerTask('foo', fn2);
-            taskRunner.registerTask('foo', fn3);
-            taskRunner.registerTask('pre-foo', fn1);
-            taskRunner.registerTask('post-foo', fn4);
-
-
-            var promise = taskRunner.run();
-
-            expect(promise).to.be.an(Promise);
-            expect(promise.then).to.be.an('function');
-            expect(promise.catch).to.be.an('function');
-
-            promise.then(function() {
-                expect(fn1.calledOnce).to.be.ok();
-                expect(fn2.calledOnce).to.be.ok();
-                expect(fn3.calledOnce).to.be.ok();
-                expect(fn4.calledOnce).to.be.ok();
-
-
-                expect(fn2.calledAfter(fn1)).to.be.ok();
-                expect(fn3.calledAfter(fn2)).to.be.ok();
-                expect(fn4.calledAfter(fn3)).to.be.ok();
-                done();
-            }).catch(function(err) {
-                done(err);
-            });
-        });
-
-        it.skip('Should should run function tasks', function(done) {
+        it('Should pipe function tasks', function(done) {
             var stub = sinon.stub();
             taskRunner.defineTasks(['foo'], true, true);
-            taskRunner.registerTask('foo', function(next) {
+            taskRunner.registerTask('foo', function(obj, next) {
                 stub();
+                obj.a = true;
                 next();
             });
 
-            var promise = taskRunner.run();
-            promise.then(function() {
+            taskRunner.registerTask('foo', function(obj, next) {
+                obj.b = true;
+                next();
+            });
+
+            var promise = taskRunner.pipe({});
+            promise.then(function(res) {
                 expect(stub.calledOnce).to.be.ok();
+                expect(res).to.eql({
+                  a: true,
+                  b: true
+                });
+
                 done();
             }).catch(function(err) {
                 done(err);
             });
         });
 
-        it.skip('Should should run promise tasks', function(done) {
+        it('Should should run promise tasks', function(done) {
             var stub = sinon.stub();
             taskRunner.defineTasks(['foo'], true, true);
-            taskRunner.registerTask('foo', function(promise) {
+            taskRunner.registerTask('foo', function(obj, promise) {
                 stub();
-                promise.resolve();
+                obj.a = true;
+                promise.resolve(obj);
             });
 
-            var promise = taskRunner.run();
-            promise.then(function() {
+            taskRunner.registerTask('foo', function(obj, promise) {
+                obj.b = true;
+                promise.resolve(obj);
+            });
+
+            var promise = taskRunner.pipe();
+            promise.then(function(res) {
                 expect(stub.calledOnce).to.be.ok();
+                expect(res).to.eql({
+                  a: true,
+                  b: true
+                });
                 done();
             }).catch(function(err) {
                 done(err);
             });
         });
 
-        it.skip('Should should run promise returning function tasks', function(done) {
+        it('Should should run promise returning function tasks', function(done) {
             var stub = sinon.stub();
             taskRunner.defineTasks(['foo'], true, true);
-            taskRunner.registerTask('foo', function() {
+            taskRunner.registerTask('foo', function(obj) {
                 stub();
+                obj.a = true;
                 return Promise.resolve();
             });
 
-            var promise = taskRunner.run();
-            promise.then(function() {
+            taskRunner.registerTask('foo', function(obj) {
+                obj.b = true;
+                return Promise.resolve();
+            });
+
+            var promise = taskRunner.pipe();
+            promise.then(function(res) {
                 expect(stub.calledOnce).to.be.ok();
+                expect(res).to.eql({
+                  a: true,
+                  b: true
+                });
                 done();
             }).catch(function(err) {
                 done(err);
             });
         });
 
-        it.skip('Should should run generator tasks', function(done) {
+        it('Should pipe generator tasks', function(done) {
             var stub = sinon.stub();
             taskRunner.defineTasks(['foo'], true, true);
-            taskRunner.registerTask('foo', function *() {
+            taskRunner.registerTask('foo', function *(obj) {
                 yield Promise.resolve();
                 stub();
-                return;
+                obj.a = true;
+                return obj;
             });
 
-            var promise = taskRunner.run();
-            promise.then(function() {
-                expect(stub.calledOnce).to.be.ok();
-                done();
-            }).catch(function(err) {
-                done(err);
-            });
-        });
-
-        it.skip('Should should run function tasks with args', function(done) {
-            var stub = sinon.stub();
-            taskRunner.defineTasks(['foo'], true, true);
-            taskRunner.registerTask('foo', function(arg1, next) {
-                stub();
-                next(null, arg1);
-            });
-
-            var promise = taskRunner.run(null, ['test']);
-            promise.then(function(result) {
-                inspect(stub.calledOnce).isTrue();
-                inspect(result)
-                    .isArray()
-                    .isEql([{
-                        task: 'foo',
-                        results: ['test']
-                    }]);
-
-                done();
-            }).catch(function(err) {
-                done(err);
-            });
-        });
-
-        it.skip('Should should run promise tasks with args', function(done) {
-            var stub = sinon.stub();
-            taskRunner.defineTasks(['foo'], true, true);
-            taskRunner.registerTask('foo', function(arg1, promise) {
-                stub();
-                promise.resolve(arg1);
-            });
-
-            var promise = taskRunner.run(null, ['test']);
-            promise.then(function(result) {
-                inspect(stub.calledOnce).isTrue();
-                inspect(result)
-                    .isArray()
-                    .isEql([{
-                        task: 'foo',
-                        results: ['test']
-                    }]);
-
-                done();
-            }).catch(function(err) {
-                done(err);
-            });
-        });
-
-        it.skip('Should should run promise returning function tasks with args', function(done) {
-            var stub = sinon.stub();
-            taskRunner.defineTasks(['foo'], true, true);
-            taskRunner.registerTask('foo', function(arg1) {
-                stub();
-                return Promise.resolve(arg1);
-            });
-
-            var promise = taskRunner.run(null, ['test']);
-            promise.then(function(result) {
-                inspect(stub.calledOnce).isTrue();
-                inspect(result)
-                    .isArray()
-                    .isEql([{
-                        task: 'foo',
-                        results: ['test']
-                    }]);
-
-                done();
-            }).catch(function(err) {
-                done(err);
-            });
-        });
-
-        it.skip('Should should run generator tasks with args', function(done) {
-            var stub = sinon.stub();
-            taskRunner.defineTasks(['foo'], true, true);
-            taskRunner.registerTask('foo', function *(arg1) {
+            taskRunner.registerTask('foo', function *(obj) {
                 yield Promise.resolve();
-                stub();
-                return arg1;
+                obj.b = true;
+                return obj;
             });
 
-            var promise = taskRunner.run(null, ['test']);
-            promise.then(function(result) {
-                inspect(stub.calledOnce).isTrue();
-                inspect(result)
-                    .isArray()
-                    .isEql([{
-                        task: 'foo',
-                        results: ['test']
-                    }]);
-
+            var promise = taskRunner.pipe();
+            promise.then(function(res) {
+                expect(stub.calledOnce).to.be.ok();
+                expect(res).to.eql({
+                  a: true,
+                  b: true
+                });
                 done();
             }).catch(function(err) {
                 done(err);

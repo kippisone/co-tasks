@@ -35,6 +35,7 @@
     "co-utils": "^0.2.0",
     "glob": "^7.0.0",
     "logtopus": "^0.1.1",
+    "node-fl": "0.0.2",
     "recursive-readdir": "^1.3.0"
   },
   "repository": {
