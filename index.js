@@ -13,7 +13,7 @@ class CoTasks {
      *     tasksDir: {string} Path to tasks directory,
      *     debug: {boolean} enables debug mode
      * }
-     * 
+     *
      * @method constructor
      * @param  {object}    [conf] Conf object
      */
@@ -22,7 +22,7 @@ class CoTasks {
 
         if (conf.debug) {
             this.debug = true;
-            log.setLevel('debug');            
+            log.setLevel('debug');
         }
 
         /**
@@ -84,7 +84,7 @@ class CoTasks {
                     if (this.debug) {
                         log.debug('Run ' + task + ' tasks. Num items', this.tasks[task].length);
                     }
-                    
+
                     result = yield co.series(this.tasks[task], ctx, args, timeout);
                     res.push({
                         task: task,
@@ -96,7 +96,7 @@ class CoTasks {
                     if (this.debug) {
                         log.debug('Run post-' + task + ' tasks. Num items', this.tasks['post-' + task].length);
                     }
-                    
+
                     result = yield co.series(this.tasks['post-' + task], ctx, args, timeout);
                     res.push({
                         task: 'post-' + task,
@@ -107,6 +107,71 @@ class CoTasks {
             }
 
             return res;
+        }.bind(this));
+    }
+
+    /**
+     * Runs tasks in series, pipes date trough all methods.
+     * @method pipe
+     *
+     * @param {String|Array} [tasks] Task name to be called. If this is not set, all tasks will be called
+     * @return {Object} Returns a promise
+     */
+    pipe(tasks, ctx, pipeArg, timeout) {
+        if (!tasks || !Array.isArray(tasks)) {
+            tasks = this.allowedTasks;
+        }
+        else if (typeof tasks === 'string') {
+            tasks = [tasks];
+        }
+
+        return co(function* () {
+            for (let task of tasks) {
+                let result;
+
+                if (!this.tasks[task]) {
+                    throw new Error('Task name ' + task + ' not defined!');
+                }
+
+                if (this.tasks['pre-' + task] && this.tasks['pre-' + task].length) {
+                    if (this.debug) {
+                        log.debug('Run pre-' + task + ' tasks. Num items', this.tasks['pre-' + task].length);
+                    }
+
+                    result = yield co.pipe(this.tasks['pre-' + task], ctx, pipeArg, timeout);
+                    if (!result) {
+                      throw new Error('Pipe error. Returned data aren\'t a valid pipe data object');
+                    }
+                    pipeArg = result;
+                }
+
+                if (this.tasks[task] && this.tasks[task].length) {
+                    if (this.debug) {
+                        log.debug('Run ' + task + ' tasks. Num items', this.tasks[task].length);
+                    }
+
+                    result = yield co.pipe(this.tasks[task], ctx, pipeArg, timeout);
+                    if (!result) {
+                      throw new Error('Pipe error. Returned data aren\'t a valid pipe data object');
+                    }
+                    pipeArg = result;
+                }
+
+                if (this.tasks['post-' + task] && this.tasks['post-' + task].length) {
+                    if (this.debug) {
+                        log.debug('Run post-' + task + ' tasks. Num items', this.tasks['post-' + task].length);
+                    }
+
+                    result = yield co.pipe(this.tasks['post-' + task], ctx, pipeArg, timeout);
+                    if (!result) {
+                      throw new Error('Pipe error. Returned data aren\'t a valid pipe data object');
+                    }
+                    pipeArg = result;
+                }
+
+            }
+
+            return pipeArg;
         }.bind(this));
     }
 
