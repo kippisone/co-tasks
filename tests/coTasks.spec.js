@@ -2,19 +2,18 @@
 
 var path = require('path');
 var CoTasks = require('../index.js');
-var expect = require('expect.js');
 var inspect = require('inspect.js');
 var sinon = require('sinon');
 
 describe('co-tasks', function() {
     describe('Constructor', function() {
         it('Should be a CoTasks class', function() {
-            expect(CoTasks).to.be.a('function');      
+            inspect(CoTasks).isClass();
         });
 
         it('Should be an instance of CoTasks', function() {
             var coTasks = new CoTasks();
-            expect(coTasks).to.be.a(CoTasks); 
+            inspect(coTasks).isInstanceOf(CoTasks);
         });
     });
 
@@ -28,8 +27,8 @@ describe('co-tasks', function() {
         it('Should pre define task names', function() {
             taskRunner.defineTasks(['foo', 'bar']);
 
-            expect(taskRunner.allowedTasks).to.eql(['foo', 'bar']);
-            expect(taskRunner.tasks).to.eql({
+            inspect(taskRunner.allowedTasks).isEql(['foo', 'bar']);
+            inspect(taskRunner.tasks).isEql({
                 'foo': [],
                 'bar': []
             });
@@ -38,8 +37,8 @@ describe('co-tasks', function() {
         it('Should pre define task names, including pre tasks', function() {
             taskRunner.defineTasks(['foo', 'bar'], true);
 
-            expect(taskRunner.allowedTasks).to.eql(['foo', 'bar']);
-            expect(taskRunner.tasks).to.eql({
+            inspect(taskRunner.allowedTasks).isEql(['foo', 'bar']);
+            inspect(taskRunner.tasks).isEql({
                 'pre-foo': [],
                 'foo': [],
                 'pre-bar': [],
@@ -50,8 +49,8 @@ describe('co-tasks', function() {
         it('Should pre define task names, including post tasks', function() {
             taskRunner.defineTasks(['foo', 'bar'], false, true);
 
-            expect(taskRunner.allowedTasks).to.eql(['foo', 'bar']);
-            expect(taskRunner.tasks).to.eql({
+            inspect(taskRunner.allowedTasks).isEql(['foo', 'bar']);
+            inspect(taskRunner.tasks).isEql({
                 'foo': [],
                 'post-foo': [],
                 'bar': [],
@@ -62,8 +61,8 @@ describe('co-tasks', function() {
         it('Should pre define task names, including pre and post tasks', function() {
             taskRunner.defineTasks(['foo', 'bar'], true, true);
 
-            expect(taskRunner.allowedTasks).to.eql(['foo', 'bar']);
-            expect(taskRunner.tasks).to.eql({
+            inspect(taskRunner.allowedTasks).isEql(['foo', 'bar']);
+            inspect(taskRunner.tasks).isEql({
                 'pre-foo': [],
                 'foo': [],
                 'post-foo': [],
@@ -78,7 +77,7 @@ describe('co-tasks', function() {
         var taskRunner;
 
         beforeEach(function() {
-            taskRunner = new CoTasks();    
+            taskRunner = new CoTasks();
         });
 
         it('Should register new tasks', function() {
@@ -86,13 +85,13 @@ describe('co-tasks', function() {
 
             };
 
-            taskRunner.registerTask('foo', fn);    
-            taskRunner.registerTask('foo', fn);    
-            taskRunner.registerTask('pre-foo', fn);    
+            taskRunner.registerTask('foo', fn);
+            taskRunner.registerTask('foo', fn);
+            taskRunner.registerTask('pre-foo', fn);
             taskRunner.registerTask('post-foo', fn);
 
-            expect(taskRunner.tasks).to.be.an('object');
-            expect(taskRunner.tasks).to.eql({
+            inspect(taskRunner.tasks).isObject();
+            inspect(taskRunner.tasks).isEql({
                 'foo': [fn, fn],
                 'pre-foo': [fn],
                 'post-foo': [fn]
@@ -106,13 +105,13 @@ describe('co-tasks', function() {
 
             taskRunner.defineTasks(['foo'], true, true);
 
-            taskRunner.registerTask('foo', fn);    
-            taskRunner.registerTask('foo', fn);    
-            taskRunner.registerTask('pre-foo', fn);    
+            taskRunner.registerTask('foo', fn);
+            taskRunner.registerTask('foo', fn);
+            taskRunner.registerTask('pre-foo', fn);
             taskRunner.registerTask('post-foo', fn);
 
-            expect(taskRunner.tasks).to.be.an('object');
-            expect(taskRunner.tasks).to.eql({
+            inspect(taskRunner.tasks).isObject();
+            inspect(taskRunner.tasks).isEql({
                 'foo': [fn, fn],
                 'pre-foo': [fn],
                 'post-foo': [fn]
@@ -127,9 +126,9 @@ describe('co-tasks', function() {
             taskRunner.defineTasks(['foo'], true, true);
 
             taskRunner.registerTask('foo', fn);
-            expect(taskRunner.registerTask.bind(taskRunner)).withArgs('bar', fn).to.throwException((/not defined/));
+            inspect(taskRunner.registerTask.bind(taskRunner)).withArgs('bar', fn).doesThrow((/not defined/));
 
-            expect(taskRunner.tasks).to.eql({
+            inspect(taskRunner.tasks).isEql({
                 'pre-foo': [],
                 'foo': [fn],
                 'post-foo': []
@@ -141,7 +140,7 @@ describe('co-tasks', function() {
         var taskRunner;
 
         beforeEach(function() {
-            taskRunner = new CoTasks();    
+            taskRunner = new CoTasks();
         });
 
         it('Should run tasks', function(done) {
@@ -155,26 +154,26 @@ describe('co-tasks', function() {
             fn3.yields(null);
             fn4.yields(null);
 
-            taskRunner.registerTask('foo', fn2);    
-            taskRunner.registerTask('foo', fn3);    
-            taskRunner.registerTask('pre-foo', fn1);    
+            taskRunner.registerTask('foo', fn2);
+            taskRunner.registerTask('foo', fn3);
+            taskRunner.registerTask('pre-foo', fn1);
             taskRunner.registerTask('post-foo', fn4);
 
             var promise = taskRunner.run('foo');
-            expect(promise).to.be.an(Promise);
-            expect(promise.then).to.be.an('function');
-            expect(promise.catch).to.be.an('function');
+            inspect(promise).isPromise()
+            inspect(promise.then).isFunction();
+            inspect(promise.catch).isFunction();
 
             promise.then(function() {
-                expect(fn1.calledOnce).to.be.ok();
-                expect(fn2.calledOnce).to.be.ok();
-                expect(fn3.calledOnce).to.be.ok();
-                expect(fn4.calledOnce).to.be.ok();
+                inspect(fn1.calledOnce).isTruthy();
+                inspect(fn2.calledOnce).isTruthy();
+                inspect(fn3.calledOnce).isTruthy();
+                inspect(fn4.calledOnce).isTruthy();
 
 
-                expect(fn2.calledAfter(fn1)).to.be.ok();
-                expect(fn3.calledAfter(fn2)).to.be.ok();
-                expect(fn4.calledAfter(fn3)).to.be.ok();
+                inspect(fn2.calledAfter(fn1)).isTruthy();
+                inspect(fn3.calledAfter(fn2)).isTruthy();
+                inspect(fn4.calledAfter(fn3)).isTruthy();
                 done();
             }).catch(function(err) {
                 done(err);
@@ -194,28 +193,28 @@ describe('co-tasks', function() {
 
             taskRunner.defineTasks(['foo'], true, true);
 
-            taskRunner.registerTask('foo', fn2);    
-            taskRunner.registerTask('foo', fn3);    
-            taskRunner.registerTask('pre-foo', fn1);    
+            taskRunner.registerTask('foo', fn2);
+            taskRunner.registerTask('foo', fn3);
+            taskRunner.registerTask('pre-foo', fn1);
             taskRunner.registerTask('post-foo', fn4);
 
 
             var promise = taskRunner.run();
-            
-            expect(promise).to.be.an(Promise);
-            expect(promise.then).to.be.an('function');
-            expect(promise.catch).to.be.an('function');
+
+            inspect(promise).isPromise()
+            inspect(promise.then).isFunction();
+            inspect(promise.catch).isFunction();
 
             promise.then(function() {
-                expect(fn1.calledOnce).to.be.ok();
-                expect(fn2.calledOnce).to.be.ok();
-                expect(fn3.calledOnce).to.be.ok();
-                expect(fn4.calledOnce).to.be.ok();
+                inspect(fn1.calledOnce).isTruthy();
+                inspect(fn2.calledOnce).isTruthy();
+                inspect(fn3.calledOnce).isTruthy();
+                inspect(fn4.calledOnce).isTruthy();
 
 
-                expect(fn2.calledAfter(fn1)).to.be.ok();
-                expect(fn3.calledAfter(fn2)).to.be.ok();
-                expect(fn4.calledAfter(fn3)).to.be.ok();
+                inspect(fn2.calledAfter(fn1)).isTruthy();
+                inspect(fn3.calledAfter(fn2)).isTruthy();
+                inspect(fn4.calledAfter(fn3)).isTruthy();
                 done();
             }).catch(function(err) {
                 done(err);
@@ -232,7 +231,7 @@ describe('co-tasks', function() {
 
             var promise = taskRunner.run();
             promise.then(function() {
-                expect(stub.calledOnce).to.be.ok();
+                inspect(stub.calledOnce).isTruthy();
                 done();
             }).catch(function(err) {
                 done(err);
@@ -249,7 +248,7 @@ describe('co-tasks', function() {
 
             var promise = taskRunner.run();
             promise.then(function() {
-                expect(stub.calledOnce).to.be.ok();
+                inspect(stub.calledOnce).isTruthy();
                 done();
             }).catch(function(err) {
                 done(err);
@@ -266,7 +265,7 @@ describe('co-tasks', function() {
 
             var promise = taskRunner.run();
             promise.then(function() {
-                expect(stub.calledOnce).to.be.ok();
+                inspect(stub.calledOnce).isTruthy();
                 done();
             }).catch(function(err) {
                 done(err);
@@ -284,7 +283,7 @@ describe('co-tasks', function() {
 
             var promise = taskRunner.run();
             promise.then(function() {
-                expect(stub.calledOnce).to.be.ok();
+                inspect(stub.calledOnce).isTruthy();
                 done();
             }).catch(function(err) {
                 done(err);
@@ -389,36 +388,268 @@ describe('co-tasks', function() {
         });
     });
 
+    describe('pipe', function() {
+        var taskRunner;
+
+        beforeEach(function() {
+            taskRunner = new CoTasks();
+        });
+
+        it('Should pipe tasks in series', function(done) {
+            var fn1 = sinon.spy(function(obj, callback) {
+              obj.fn1 = true;
+              callback(null, obj);
+            });
+
+            var fn2 = sinon.spy(function(obj, callback) {
+              obj.fn2 = true;
+              callback(null, obj);
+            });
+
+            var fn3 = sinon.spy(function(obj, callback) {
+              obj.fn3 = true;
+              callback(null, obj);
+            });
+
+            var fn4 = sinon.spy(function(obj, callback) {
+              obj.fn4 = true;
+              callback(null, obj);
+            });
+
+            taskRunner.registerTask('foo', fn2);
+            taskRunner.registerTask('foo', fn3);
+            taskRunner.registerTask('pre-foo', fn1);
+            taskRunner.registerTask('post-foo', fn4);
+
+            var promise = taskRunner.pipe(['foo'], {});
+            inspect(promise).isPromise()
+            inspect(promise.then).isFunction();
+            inspect(promise.catch).isFunction();
+
+            promise.then(function(res) {
+                inspect(fn1.calledOnce).isTruthy();
+                inspect(fn2.calledOnce).isTruthy();
+                inspect(fn3.calledOnce).isTruthy();
+                inspect(fn4.calledOnce).isTruthy();
+
+                inspect(fn2.calledAfter(fn1)).isTruthy();
+                inspect(fn3.calledAfter(fn2)).isTruthy();
+                inspect(fn4.calledAfter(fn3)).isTruthy();
+
+                inspect(res).isEql({
+                  fn1: true,
+                  fn2: true,
+                  fn3: true,
+                  fn4: true
+                });
+
+                done();
+            }).catch(function(err) {
+                done(err);
+            });
+        });
+
+        it('Should pipe predefined tasks', function(done) {
+            var fn1 = sinon.spy(function(obj, callback) {
+              obj.fn1 = true;
+              callback(null, obj);
+            });
+
+            var fn2 = sinon.spy(function(obj, callback) {
+              obj.fn2 = true;
+              callback(null, obj);
+            });
+
+            var fn3 = sinon.spy(function(obj, callback) {
+              obj.fn3 = true;
+              callback(null, obj);
+            });
+
+            var fn4 = sinon.spy(function(obj, callback) {
+              obj.fn4 = true;
+              callback(null, obj);
+            });
+
+            taskRunner.defineTasks(['foo'], true, true);
+
+            taskRunner.registerTask('foo', fn2);
+            taskRunner.registerTask('foo', fn3);
+            taskRunner.registerTask('pre-foo', fn1);
+            taskRunner.registerTask('post-foo', fn4);
+
+
+            var promise = taskRunner.pipe({});
+
+            inspect(promise).isPromise()
+            inspect(promise.then).isFunction();
+            inspect(promise.catch).isFunction();
+
+            promise.then(function(res) {
+                inspect(fn1.calledOnce).isTruthy();
+                inspect(fn2.calledOnce).isTruthy();
+                inspect(fn3.calledOnce).isTruthy();
+                inspect(fn4.calledOnce).isTruthy();
+
+
+                inspect(fn2.calledAfter(fn1)).isTruthy();
+                inspect(fn3.calledAfter(fn2)).isTruthy();
+                inspect(fn4.calledAfter(fn3)).isTruthy();
+
+                inspect(res).isEql({
+                  fn1: true,
+                  fn2: true,
+                  fn3: true,
+                  fn4: true
+                });
+
+                done();
+            }).catch(function(err) {
+                done(err);
+            });
+        });
+
+        it('Should pipe function tasks', function(done) {
+            var stub = sinon.stub();
+            taskRunner.defineTasks(['foo'], true, true);
+            taskRunner.registerTask('foo', function(obj, next) {
+                stub();
+                obj.a = true;
+                next();
+            });
+
+            taskRunner.registerTask('foo', function(obj, next) {
+                obj.b = true;
+                next();
+            });
+
+            var promise = taskRunner.pipe({});
+            promise.then(function(res) {
+                inspect(stub.calledOnce).isTruthy();
+                inspect(res).isEql({
+                  a: true,
+                  b: true
+                });
+
+                done();
+            }).catch(function(err) {
+                done(err);
+            });
+        });
+
+        it('Should should run promise tasks', function(done) {
+            var stub = sinon.stub();
+            taskRunner.defineTasks(['foo'], true, true);
+            taskRunner.registerTask('foo', function(obj, promise) {
+                stub();
+                obj.a = true;
+                promise.resolve(obj);
+            });
+
+            taskRunner.registerTask('foo', function(obj, promise) {
+                obj.b = true;
+                promise.resolve(obj);
+            });
+
+            var promise = taskRunner.pipe();
+            promise.then(function(res) {
+                inspect(stub.calledOnce).isTruthy();
+                inspect(res).isEql({
+                  a: true,
+                  b: true
+                });
+                done();
+            }).catch(function(err) {
+                done(err);
+            });
+        });
+
+        it('Should should run promise returning function tasks', function(done) {
+            var stub = sinon.stub();
+            taskRunner.defineTasks(['foo'], true, true);
+            taskRunner.registerTask('foo', function(obj) {
+                stub();
+                obj.a = true;
+                return Promise.resolve();
+            });
+
+            taskRunner.registerTask('foo', function(obj) {
+                obj.b = true;
+                return Promise.resolve();
+            });
+
+            var promise = taskRunner.pipe();
+            promise.then(function(res) {
+                inspect(stub.calledOnce).isTruthy();
+                inspect(res).isEql({
+                  a: true,
+                  b: true
+                });
+                done();
+            }).catch(function(err) {
+                done(err);
+            });
+        });
+
+        it('Should pipe generator tasks', function(done) {
+            var stub = sinon.stub();
+            taskRunner.defineTasks(['foo'], true, true);
+            taskRunner.registerTask('foo', function *(obj) {
+                yield Promise.resolve();
+                stub();
+                obj.a = true;
+                return obj;
+            });
+
+            taskRunner.registerTask('foo', function *(obj) {
+                yield Promise.resolve();
+                obj.b = true;
+                return obj;
+            });
+
+            var promise = taskRunner.pipe();
+            promise.then(function(res) {
+                inspect(stub.calledOnce).isTruthy();
+                inspect(res).isEql({
+                  a: true,
+                  b: true
+                });
+                done();
+            }).catch(function(err) {
+                done(err);
+            });
+        });
+    });
+
     describe('registerTasksDir', function() {
         var taskRunner;
 
         beforeEach(function() {
             taskRunner = new CoTasks();
         });
-        
+
         it('Should be a method', function() {
-            expect(taskRunner.registerTasksDir).to.be.a('function');
+            inspect(taskRunner.registerTasksDir).isFunction();
         });
-            
+
         it('Should register a task dir', function() {
             taskRunner.registerTasksDir(path.join(__dirname, 'tasks/'));
-            expect(taskRunner.tasks).to.be.an('object');
-            expect(taskRunner.tasks.foo).to.be.an('array');
-            expect(taskRunner.tasks.foo).to.have.length(1);
-            expect(taskRunner.tasks.bar).to.be.an('array');
-            expect(taskRunner.tasks.bar).to.have.length(1);
+            inspect(taskRunner.tasks).isObject();
+            inspect(taskRunner.tasks.foo).isArray();
+            inspect(taskRunner.tasks.foo).hasLength(1);
+            inspect(taskRunner.tasks.bar).isArray();
+            inspect(taskRunner.tasks.bar).hasLength(1);
         });
-            
+
         it('Should register a task dir', function() {
             taskRunner = new CoTasks({
                 tasksDir: path.join(__dirname, 'tasks/')
             });
 
-            expect(taskRunner.tasks).to.be.an('object');
-            expect(taskRunner.tasks.foo).to.be.an('array');
-            expect(taskRunner.tasks.foo).to.have.length(1);
-            expect(taskRunner.tasks.bar).to.be.an('array');
-            expect(taskRunner.tasks.bar).to.have.length(1);
+            inspect(taskRunner.tasks).isObject();
+            inspect(taskRunner.tasks.foo).isArray();
+            inspect(taskRunner.tasks.foo).hasLength(1);
+            inspect(taskRunner.tasks.bar).isArray();
+            inspect(taskRunner.tasks.bar).hasLength(1);
         });
     });
 });

@@ -3,7 +3,8 @@
 var path = require('path');
 var co = require('co-utils');
 var glob = require('glob');
-var log = require('logtopus');
+var log = require('logtopus').getLogger('co-task');
+log.setLevel('warn');
 
 class CoTasks {
     /**
@@ -13,7 +14,7 @@ class CoTasks {
      *     tasksDir: {string} Path to tasks directory,
      *     debug: {boolean} enables debug mode
      * }
-     * 
+     *
      * @method constructor
      * @param  {object}    [conf] Conf object
      */
@@ -22,7 +23,7 @@ class CoTasks {
 
         if (conf.debug) {
             this.debug = true;
-            log.setLevel('debug');            
+            log.setLevel('debug');
         }
 
         /**
@@ -84,7 +85,7 @@ class CoTasks {
                     if (this.debug) {
                         log.debug('Run ' + task + ' tasks. Num items', this.tasks[task].length);
                     }
-                    
+
                     result = yield co.series(this.tasks[task], ctx, args, timeout);
                     res.push({
                         task: task,
@@ -96,7 +97,7 @@ class CoTasks {
                     if (this.debug) {
                         log.debug('Run post-' + task + ' tasks. Num items', this.tasks['post-' + task].length);
                     }
-                    
+
                     result = yield co.series(this.tasks['post-' + task], ctx, args, timeout);
                     res.push({
                         task: 'post-' + task,
@@ -111,6 +112,80 @@ class CoTasks {
     }
 
     /**
+     * Runs tasks in series, pipes date trough all methods.
+     * @method pipe
+     *
+     * @param {String|Array} [tasks] Task name to be called. If this is not set, all tasks will be called
+     * @return {Object} Returns a promise
+     */
+    pipe(tasks, ctx, pipeArg, timeout) {
+        if (typeof tasks === 'string') {
+            tasks = [tasks];
+        }
+
+        if (!tasks || !Array.isArray(tasks)) {
+            timeout = pipeArg;
+            pipeArg = ctx;
+            ctx = tasks;
+            tasks = this.allowedTasks;
+        }
+
+        if (typeof pipeArg === 'number' || pipeArg === undefined) {
+          pipeArg = ctx;
+          ctx = null;
+        }
+
+
+        if (!tasks) {
+           throw new Error('Set allowedTasks option or use tasks argument!');
+        }
+
+        return co(function* () {
+            for (let task of tasks) {
+                if (!this.tasks[task]) {
+                    throw new Error('Task name ' + task + ' not defined!');
+                }
+
+                if (this.tasks['pre-' + task] && this.tasks['pre-' + task].length) {
+                    if (this.debug) {
+                        log.debug('Run pre-' + task + ' tasks. Num items', this.tasks['pre-' + task].length);
+                    }
+
+                    pipeArg = yield co.pipe(this.tasks['pre-' + task], ctx, pipeArg, timeout);
+                    if (!pipeArg) {
+                      throw new Error('Pipe error. Returned data aren\'t a valid pipe data object');
+                    }
+                }
+
+                if (this.tasks[task] && this.tasks[task].length) {
+                    if (this.debug) {
+                        log.debug('Run ' + task + ' tasks. Num items', this.tasks[task].length);
+                    }
+
+                    pipeArg = yield co.pipe(this.tasks[task], ctx, pipeArg, timeout);
+                    if (!pipeArg) {
+                      throw new Error('Pipe error. Returned data aren\'t a valid pipe data object');
+                    }
+                }
+
+                if (this.tasks['post-' + task] && this.tasks['post-' + task].length) {
+                    if (this.debug) {
+                        log.debug('Run post-' + task + ' tasks. Num items', this.tasks['post-' + task].length);
+                    }
+
+                    pipeArg = yield co.pipe(this.tasks['post-' + task], ctx, pipeArg, timeout);
+                    if (!pipeArg) {
+                      throw new Error('Pipe error. Returned data aren\'t a valid pipe data object');
+                    }
+                }
+
+            }
+
+            return pipeArg;
+        }.bind(this));
+    }
+
+    /**
      * Registers a task
      * @chainable
      * @method registerTask
@@ -120,7 +195,10 @@ class CoTasks {
      * @return {Object} Returns this.
      */
     registerTask(name, fn) {
-        log.debug('Register new task', name);
+        if (this.debug) {
+            log.debug('Register new task', name);
+        }
+
         if (!this.tasks[name]) {
             if (this.allowedTasks) {
                 throw new Error('Task name ' + name + ' not defined!\nAllowed tasks are: ' + Object.keys(this.tasks).join(', '));
@@ -166,12 +244,21 @@ class CoTasks {
      * @returns {object} Returns a promise
      */
     registerTasksDir(dir) {
-        log.debug('Register tasks dir', dir);
+        if (this.debug) {
+            log.debug('Register tasks dir', dir);
+        }
+
         var self = this;
-        var files = glob.sync(path.join(dir, '**/*.js'));
+        var files = glob.sync('**/*.js', {
+          cwd: dir
+        });
+
         for (let file of files) {
-            log.debug('... load tasks file', file);
-            var mod = require(file);
+            if (this.debug) {
+                log.debug('... load tasks file', file);
+            }
+
+            var mod = require(path.join(dir, file));
             mod(self, log);
         }
     }

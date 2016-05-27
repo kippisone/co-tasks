@@ -3,6 +3,8 @@ co-tasks
 
 Task or hook runner using co. Runs an array of tasks in series.
 
+## .run([tasks], [ctx], [args], [timeout])
+
 ```js
 
 var TaskRunner = require('co-tasks');
@@ -49,6 +51,14 @@ Finish
 
 ```
 
+## .pipe([tasks], [ctx], pipeObj, [timeout])
+
+Runns tasks in series, pipes `pipeObj` through all tasks in series  
+
+`tasks` Task names, this can be optional if allowedTasks option is set.  
+`ctx` This context  
+`pipeObj` Pipe through object  
+`timeout` Timpout in milliseconds. Defaults to `30000`  
 
 ### yieldables
 
