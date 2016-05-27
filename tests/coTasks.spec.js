@@ -8,7 +8,7 @@ var sinon = require('sinon');
 describe('co-tasks', function() {
     describe('Constructor', function() {
         it('Should be a CoTasks class', function() {
-            inspect(CoTasks).isFunction();
+            inspect(CoTasks).isClass();
         });
 
         it('Should be an instance of CoTasks', function() {
