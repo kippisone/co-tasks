@@ -3,7 +3,8 @@
 var path = require('path');
 var co = require('co-utils');
 var glob = require('glob');
-var log = require('logtopus');
+var log = require('logtopus').getLogger('co-task');
+log.setLevel('warn');
 
 class CoTasks {
     /**
