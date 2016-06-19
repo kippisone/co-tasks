@@ -262,7 +262,10 @@ class CoTasks {
    * @return {Object} Returns this.
    */
   registerTask(name, fn) {
-    log.debug('Register new task', name);
+        if (this.debug) {
+            log.debug('Register new task', name);
+        }
+
     if (!this.tasks[name]) {
       if (this.allowedTasks) {
         throw new Error('Task name ' + name + ' not defined!\nAllowed tasks are: ' + Object.keys(this.tasks).join(', '));
@@ -308,14 +311,20 @@ class CoTasks {
    * @returns {object} Returns a promise
    */
   registerTasksDir(dir) {
-    log.debug('Register tasks dir', dir);
+        if (this.debug) {
+            log.debug('Register tasks dir', dir);
+        }
+
     var self = this;
     var files = glob.sync('**/*.js', {
      cwd: dir
     });
 
     for (let file of files) {
-      log.debug('... load tasks file', file);
+            if (this.debug) {
+                log.debug('... load tasks file', file);
+            }
+
       var mod = require(path.join(dir, file));
       mod(self, log);
     }

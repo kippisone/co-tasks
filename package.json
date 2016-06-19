@@ -1,6 +1,6 @@
 {
   "name": "co-tasks",
-  "version": "0.2.0",
+  "version": "0.3.1",
   "description": "Task/Hook runner using co. Runs an array of tasks in series.",
   "main": "index.js",
   "directories": {
@@ -26,17 +26,16 @@
   "author": "Andi Heinkelein <andifeind@noname-media.com>",
   "license": "MIT",
   "devDependencies": {
-    "expect.js": "^0.3.1",
     "inspect.js": "^0.1.2",
     "mocha": "^2.5.3",
     "sinon": "^1.17.4"
   },
   "dependencies": {
-    "co-utils": "^0.2.0",
+    "co-utils": "^0.3.1",
     "glob": "^7.0.3",
     "logtopus": "^0.2.1",
     "node-fl": "0.0.2",
-    "recursive-readdir": "^1.3.0"
+    "recursive-readdir": "^2.0.0"
   },
   "repository": {
     "type": "git",
