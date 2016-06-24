@@ -213,7 +213,8 @@ class CoTasks {
       throw new Error('Set allowedTasks option or use tasks argument!');
     }
 
-    return co(function* () {
+    let queueStats = [];
+    let taskRunner = co(function* () {
       let Queue = require('./libs/queue');
 
       let availableTasks = this.getAvailableTasks(tasks);
@@ -221,9 +222,17 @@ class CoTasks {
       let outQueue = new Queue();
       outQueue.items = initialQueue.concat();
 
+
       let workers = availableTasks.map(task => {
         let inQueue = outQueue;
         outQueue = new Queue();
+
+        queueStats.push({
+          len: function() {
+            return inQueue.len();
+          },
+          task: task
+        });
 
         return {
           task: task,
@@ -235,9 +244,21 @@ class CoTasks {
       while(enabled) {
         let res;
         let continueQueue = 0;
+        let isPaused = false;
         for (let i = 0, len = workers.length; i < len; i++) {
           let task = workers[i];
-          yield co.series(this.tasks[task.task], ctx, [task.inQ, task.outQ], timeout);
+
+          if (task.isPaused) {
+            if (task.outQ.len() === 0) {
+              task.isPaused = false;
+            }
+          }
+          else {
+            yield co.series(this.tasks[task.task], ctx, [task.inQ, task.outQ], timeout);
+            if (task.outQ.len() > 500 && i < len - 1) {
+              task.isPaused = true;
+            }
+          }
           res = task.outQ;
 
           if (task.inQ.items.length !== 0) {
@@ -250,6 +271,12 @@ class CoTasks {
         }
       }
     }.bind(this));
+
+    taskRunner.stat = function() {
+      return queueStats;
+    }
+
+    return taskRunner;
   }
 
   /**
