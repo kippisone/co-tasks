@@ -633,31 +633,24 @@ describe('co-tasks', function() {
 
     it('Should register call queued tasks', function() {
       taskRunner.registerTask('prepare', function * (inQ, outQ) {
-        inspect.print(inQ);
         let item = inQ.shift();
         item += '-prepare';
         outQ.push(item);
-        inspect.print(outQ);
       });
 
       taskRunner.registerTask('parse', function * (inQ, outQ) {
-        inspect.print(inQ);
         let item = inQ.shift();
         item += '-parse';
         outQ.push(item);
-        inspect.print(outQ);
       });
 
       taskRunner.registerTask('clean', function * (inQ, outQ) {
-        inspect.print(inQ);
         let item = inQ.shift();
         item += '-clean';
         outQ.push(item);
-        inspect.print(outQ);
       });
 
       return taskRunner.queued(['prepare', 'parse', 'clean'], null, ['1', '2', '3']).then(data => {
-        inspect.print(data);
         inspect(data).isArray();
         inspect(data).hasLength(3);
         inspect(data).isEql([
